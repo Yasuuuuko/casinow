@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blackjack - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head><body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Déco</a></div>
+  </div>
+</nav>
+<div class="game-layout">
+  <div class="nav-sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item active"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="game-area">
+    <div style="display:flex;gap:20px;width:100%;max-width:900px">
+      <div class="game-sidebar" style="width:260px">
+        <div class="bet-section">
+          <div class="bet-label">MISE</div>
+          <div class="bet-input-wrap"><span class="bet-coin">🪙</span><input type="number" id="bet" class="bet-input" value="100" min="1"></div>
+          <div class="bet-btns">
+            <button class="bet-btn" onclick="adjBet(.5)">½</button>
+            <button class="bet-btn" onclick="adjBet(2)">2x</button>
+            <button class="bet-btn" onclick="setBet(100)">100</button>
+            <button class="bet-btn" onclick="setBet(500)">500</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="deal-btn" onclick="deal()">🃏 Distribuer</button>
+        <div class="bj-actions" id="actions" style="display:none">
+          <button class="btn-primary" onclick="hit()">Tirer</button>
+          <button class="btn-secondary" onclick="stand()">Rester</button>
+        </div>
+        <div id="result" class="result-box"></div>
+      </div>
+      <div style="flex:1;background:#1a2634;border-radius:16px;border:1px solid #2d3f50;overflow:hidden">
+        <div class="panel-header">🃏 Blackjack</div>
+        <div class="bj-area">
+          <div>
+            <div class="bj-label">CROUPIER <span class="bj-score" id="dealer-score"></span></div>
+            <div class="bj-hand" id="dealer-hand"></div>
+          </div>
+          <div style="height:2px;background:#2d3f50;margin:8px 0"></div>
+          <div>
+            <div class="bj-label">TOI <span class="bj-score" id="player-score"></span></div>
+            <div class="bj-hand" id="player-hand"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+fetch('/api/me').then(r=>r.status===401?location.href='/':r.json()).then(d=>{
+  if(!d)return;
+  document.getElementById('balance-amount').textContent=d.balance.toLocaleString();
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+function adjBet(m){const i=document.getElementById('bet');i.value=Math.max(1,Math.floor(i.value*m));}
+function setBet(v){document.getElementById('bet').value=v;}
+
+function cardEl(c){
+  const el=document.createElement('div');
+  el.className='bj-card'+(c==='?'?' hidden':'');
+  el.textContent=c;
+  return el;
+}
+function renderHands(player,dealer,pval,dval){
+  const ph=document.getElementById('player-hand');
+  const dh=document.getElementById('dealer-hand');
+  ph.innerHTML=''; dh.innerHTML='';
+  player.forEach(c=>ph.appendChild(cardEl(c)));
+  dealer.forEach(c=>dh.appendChild(cardEl(c)));
+  document.getElementById('player-score').textContent=pval;
+  document.getElementById('dealer-score').textContent=dval!==undefined?dval:'?';
+}
+
+async function deal(){
+  const bet=parseInt(document.getElementById('bet').value)||0;
+  const res=await fetch('/api/blackjack/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet})});
+  const data=await res.json();
+  if(data.error){showResult(false,data.error);return;}
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  document.getElementById('result').style.display='none';
+  if(data.blackjack){
+    renderHands(data.player,data.dealer,data.player_val,data.dealer_val);
+    document.getElementById('actions').style.display='none';
+    document.getElementById('deal-btn').style.display='block';
+    showResult(true,'🎉 BLACKJACK ! +'+data.winnings+' 🪙');
+    return;
+  }
+  renderHands(data.player,data.dealer,data.player_val,data.dealer_val_shown);
+  document.getElementById('deal-btn').style.display='none';
+  document.getElementById('actions').style.display='flex';
+}
+
+async function hit(){
+  const res=await fetch('/api/blackjack/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  const data=await res.json();
+  if(data.error){showResult(false,data.error);return;}
+  document.getElementById('player-hand').appendChild(cardEl(data.player[data.player.length-1]));
+  document.getElementById('player-score').textContent=data.player_val;
+  if(data.bust){
+    document.getElementById('actions').style.display='none';
+    document.getElementById('deal-btn').style.display='block';
+    document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+    showResult(false,'💥 Bust ! Perdu...');
+  }
+}
+
+async function stand(){
+  const res=await fetch('/api/blackjack/stand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  const data=await res.json();
+  if(data.error){showResult(false,data.error);return;}
+  renderHands(data.player,data.dealer,data.player_val,data.dealer_val);
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  document.getElementById('actions').style.display='none';
+  document.getElementById('deal-btn').style.display='block';
+  if(data.result==='win') showResult(true,'✅ Gagné ! +'+data.winnings+' 🪙');
+  else if(data.result==='push') showResult(true,'🤝 Égalité — Mise remboursée');
+  else showResult(false,'❌ Perdu...');
+}
+
+function showResult(won,msg){
+  const el=document.getElementById('result');el.style.display='block';
+  el.className='result-box '+(won?'result-win':'result-lose');el.textContent=msg;
+}
+</script>
+</body></html>
