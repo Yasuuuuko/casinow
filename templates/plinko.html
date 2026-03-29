@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plinko - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Déco</a></div>
+  </div>
+</nav>
+
+<div class="game-layout">
+  <div class="nav-sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item active"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+
+  <div class="game-area">
+    <div style="display:flex;gap:20px;width:100%;max-width:900px;align-items:flex-start">
+
+      <!-- SIDEBAR BET -->
+      <div class="game-sidebar" style="width:260px">
+        <div class="bet-section">
+          <div class="bet-label">MISE</div>
+          <div class="bet-input-wrap">
+            <span class="bet-coin">🪙</span>
+            <input type="number" id="bet" class="bet-input" value="100" min="1">
+          </div>
+          <div class="bet-btns">
+            <button class="bet-btn" onclick="adjBet(.5)">½</button>
+            <button class="bet-btn" onclick="adjBet(2)">2x</button>
+            <button class="bet-btn" onclick="setBet(100)">100</button>
+            <button class="bet-btn" onclick="setBet(500)">500</button>
+            <button class="bet-btn" onclick="setBet(1000)">1K</button>
+          </div>
+        </div>
+
+        <div class="bet-section">
+          <div class="bet-label">LIGNES</div>
+          <select id="rows" class="bet-input" style="padding-left:10px">
+            <option value="8">8 lignes</option>
+            <option value="12">12 lignes</option>
+            <option value="16" selected>16 lignes</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="play-btn" onclick="playPlinko()">🎯 Lancer</button>
+        <div id="result" class="result-box"></div>
+      </div>
+
+      <!-- CANVAS -->
+      <div style="flex:1;background:#0f1923;border-radius:16px;border:1px solid #2d3f50;overflow:hidden">
+        <div class="panel-header">🎯 Plinko</div>
+        <canvas id="plinko-canvas"></canvas>
+        <div id="slots-row" class="plinko-slots"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// Auth check
+fetch('/api/me').then(r=>r.status===401?location.href='/':r.json()).then(d=>{
+  if(!d) return;
+  document.getElementById('balance-amount').textContent=d.balance.toLocaleString();
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+
+function adjBet(m){const i=document.getElementById('bet');i.value=Math.max(1,Math.floor(i.value*m));}
+function setBet(v){document.getElementById('bet').value=v;}
+
+// PLINKO CANVAS
+const MULTI = {
+  8:  [5.6,2.1,1.1,1.0,0.5,1.0,1.1,2.1,5.6],
+  12: [10,3,1.6,1.4,1.1,1.0,0.5,1.0,1.1,1.4,1.6,3,10],
+  16: [16,9,2,1.4,1.4,1.2,1.1,1.0,0.5,1.0,1.1,1.2,1.4,1.4,2,9,16],
+};
+const COLORS = v => v>=10?'#e74c3c':v>=5?'#e67e22':v>=2?'#f1c40f':v>=1?'#2ecc71':'#3498db';
+
+const canvas = document.getElementById('plinko-canvas');
+const ctx = canvas.getContext('2d');
+let rows=16, pins=[], slots=[], ballAnim=null;
+
+function setup(){
+  rows = parseInt(document.getElementById('rows').value);
+  const mults = MULTI[rows];
+  const W=580, H=420;
+  canvas.width=W; canvas.height=H;
+  pins=[];
+  const startY=40, gapY=(H-100)/(rows);
+  for(let r=0;r<rows;r++){
+    const cols=r+2;
+    const gapX = W/(cols+1);
+    for(let c=0;c<cols;c++){
+      pins.push({x:gapX*(c+1), y:startY+r*gapY});
+    }
+  }
+  slots=[];
+  const slotCols=rows+1;
+  const slotW=W/slotCols;
+  const slotsDiv=document.getElementById('slots-row');
+  slotsDiv.innerHTML='';
+  for(let i=0;i<mults.length;i++){
+    const x=slotW*i;
+    slots.push({x:x+slotW/2, w:slotW, mult:mults[i]});
+    const el=document.createElement('div');
+    el.className='plinko-slot';
+    el.textContent=mults[i]+'x';
+    el.style.background=COLORS(mults[i])+'22';
+    el.style.color=COLORS(mults[i]);
+    el.style.border='1px solid '+COLORS(mults[i])+'55';
+    slotsDiv.appendChild(el);
+  }
+  drawBoard();
+}
+
+function drawBoard(ball=null, highlight=-1){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  // pins
+  pins.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,5,0,Math.PI*2);
+    ctx.fillStyle='#2d3f50';
+    ctx.fill();
+    ctx.strokeStyle='#4a6278';
+    ctx.lineWidth=1;
+    ctx.stroke();
+  });
+  // ball
+  if(ball){
+    const grad=ctx.createRadialGradient(ball.x-3,ball.y-3,2,ball.x,ball.y,12);
+    grad.addColorStop(0,'#fff');
+    grad.addColorStop(1,'#f1c40f');
+    ctx.beginPath();
+    ctx.arc(ball.x,ball.y,10,0,Math.PI*2);
+    ctx.fillStyle=grad;
+    ctx.shadowColor='#f1c40f';
+    ctx.shadowBlur=15;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+}
+
+function animateBall(path, slotIdx, onDone){
+  const rows2=rows;
+  const W=canvas.width, H=canvas.height;
+  const startY=40, gapY=(H-100)/rows2;
+  const slotCols=rows2+1;
+  const slotW=W/slotCols;
+  // build waypoints
+  const pts=[{x:W/2, y:10}];
+  let pos=0;
+  for(let r=0;r<rows2;r++){
+    const cols=r+2;
+    const gapX=W/(cols+1);
+    pos+=path[r];
+    pts.push({x:gapX*(pos+1), y:startY+r*gapY});
+  }
+  pts.push({x:slots[slotIdx].x, y:H-20});
+  let seg=0, t=0, speed=0.04;
+  function frame(){
+    if(seg>=pts.length-1){onDone(); return;}
+    const a=pts[seg], b=pts[seg+1];
+    const bx=a.x+(b.x-a.x)*t, by=a.y+(b.y-a.y)*t;
+    // add bounce
+    const bounce=Math.sin(t*Math.PI)*6;
+    drawBoard({x:bx+bounce,y:by});
+    t+=speed;
+    if(t>=1){t=0;seg++; speed=Math.min(0.08,speed+0.002);}
+    ballAnim=requestAnimationFrame(frame);
+  }
+  frame();
+}
+
+async function playPlinko(){
+  if(ballAnim){cancelAnimationFrame(ballAnim);ballAnim=null;}
+  const bet=parseInt(document.getElementById('bet').value)||0;
+  const rows2=parseInt(document.getElementById('rows').value);
+  document.getElementById('play-btn').disabled=true;
+  const res=await fetch('/api/plinko',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,rows:rows2})});
+  const data=await res.json();
+  if(data.error){
+    showResult(false,data.error);
+    document.getElementById('play-btn').disabled=false;
+    return;
+  }
+  // animate
+  animateBall(data.path, data.slot, ()=>{
+    document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+    const won=data.profit>0;
+    showResult(won, won?'+'+data.winnings+' 🪙 ('+data.multiplier+'x)':data.winnings===0?'Perdu...':'Récupéré '+data.winnings+' 🪙');
+    document.getElementById('play-btn').disabled=false;
+    // highlight slot
+    const slotEls=document.querySelectorAll('.plinko-slot');
+    slotEls.forEach((el,i)=>{
+      el.style.transform=i===data.slot?'scale(1.15)':'scale(1)';
+      el.style.fontWeight=i===data.slot?'900':'700';
+    });
+    setTimeout(()=>slotEls.forEach(el=>{el.style.transform='';el.style.fontWeight='';}),2000);
+  });
+}
+
+function showResult(won,msg){
+  const el=document.getElementById('result');
+  el.style.display='block';
+  el.className='result-box '+(won?'result-win':'result-lose');
+  el.textContent=msg;
+}
+
+document.getElementById('rows').addEventListener('change',setup);
+setup();
+</script>
+</body>
+</html>
