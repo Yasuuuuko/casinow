@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mines - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head><body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Déco</a></div>
+  </div>
+</nav>
+<div class="game-layout">
+  <div class="nav-sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item active"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="game-area">
+    <div style="display:flex;gap:20px;width:100%;max-width:900px">
+      <div class="game-sidebar" style="width:260px">
+        <div class="bet-section">
+          <div class="bet-label">MISE</div>
+          <div class="bet-input-wrap"><span class="bet-coin">🪙</span><input type="number" id="bet" class="bet-input" value="100" min="1"></div>
+          <div class="bet-btns">
+            <button class="bet-btn" onclick="adjBet(.5)">½</button>
+            <button class="bet-btn" onclick="adjBet(2)">2x</button>
+            <button class="bet-btn" onclick="setBet(100)">100</button>
+            <button class="bet-btn" onclick="setBet(500)">500</button>
+          </div>
+        </div>
+        <div class="bet-section">
+          <div class="bet-label">MINES</div>
+          <select id="mines-count" class="bet-input" style="padding-left:10px">
+            <option value="1">1 mine</option><option value="3">3 mines</option>
+            <option value="5" selected>5 mines</option><option value="10">10 mines</option>
+            <option value="15">15 mines</option><option value="20">20 mines</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="start-btn" onclick="startGame()">💣 Démarrer</button>
+        <button class="btn-secondary" id="cashout-btn" onclick="cashout()" style="display:none">💰 Encaisser</button>
+        <div class="multiplier-display" id="mult-display" style="display:none">1.00x</div>
+        <div class="balance-tag" id="pot-display"></div>
+        <div id="result" class="result-box"></div>
+      </div>
+      <div style="flex:1;background:#1a2634;border-radius:16px;border:1px solid #2d3f50;overflow:hidden">
+        <div class="panel-header">💣 Mines</div>
+        <div class="mines-grid" id="mines-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let gameActive=false;
+fetch('/api/me').then(r=>r.status===401?location.href='/':r.json()).then(d=>{
+  if(!d)return;
+  document.getElementById('balance-amount').textContent=d.balance.toLocaleString();
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+function adjBet(m){const i=document.getElementById('bet');i.value=Math.max(1,Math.floor(i.value*m));}
+function setBet(v){document.getElementById('bet').value=v;}
+
+function buildGrid(disabled=true){
+  const grid=document.getElementById('mines-grid');
+  grid.innerHTML='';
+  for(let i=0;i<25;i++){
+    const cell=document.createElement('div');
+    cell.className='mine-cell';
+    cell.dataset.idx=i;
+    if(!disabled) cell.onclick=()=>reveal(i);
+    grid.appendChild(cell);
+  }
+}
+
+async function startGame(){
+  const bet=parseInt(document.getElementById('bet').value)||0;
+  const mines=parseInt(document.getElementById('mines-count').value);
+  const res=await fetch('/api/mines/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,mines})});
+  const data=await res.json();
+  if(data.error){showResult(false,data.error);return;}
+  gameActive=true;
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  document.getElementById('start-btn').style.display='none';
+  document.getElementById('cashout-btn').style.display='block';
+  document.getElementById('mult-display').style.display='block';
+  document.getElementById('result').style.display='none';
+  buildGrid(false);
+}
+
+async function reveal(pos){
+  if(!gameActive)return;
+  const res=await fetch('/api/mines/reveal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pos})});
+  const data=await res.json();
+  const cell=document.querySelector('[data-idx="'+pos+'"]');
+  if(data.hit){
+    gameActive=false;
+    cell.textContent='💣'; cell.classList.add('mine-hit');
+    data.mines.forEach(m=>{
+      const c=document.querySelector('[data-idx="'+m+'"]');
+      if(m!==pos){c.textContent='💣';c.classList.add('mine-show');}
+    });
+    document.querySelectorAll('.mine-cell').forEach(c=>c.onclick=null);
+    document.getElementById('cashout-btn').style.display='none';
+    document.getElementById('start-btn').style.display='block';
+    document.getElementById('mult-display').style.display='none';
+    showResult(false,'💣 Boom ! Perdu !');
+    document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  } else {
+    cell.textContent='💎'; cell.classList.add('gem'); cell.onclick=null;
+    document.getElementById('mult-display').textContent=data.multiplier+'x';
+    document.getElementById('pot-display').textContent='Potentiel: '+data.potential+' 🪙';
+  }
+}
+
+async function cashout(){
+  if(!gameActive)return;
+  const res=await fetch('/api/mines/cashout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  const data=await res.json();
+  if(data.error){showResult(false,data.error);return;}
+  gameActive=false;
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  document.getElementById('cashout-btn').style.display='none';
+  document.getElementById('start-btn').style.display='block';
+  document.getElementById('mult-display').style.display='none';
+  document.querySelectorAll('.mine-cell').forEach(c=>c.onclick=null);
+  showResult(true,'✅ +'+data.winnings+' 🪙 ('+data.multiplier+'x)');
+}
+
+function showResult(won,msg){
+  const el=document.getElementById('result');
+  el.style.display='block';
+  el.className='result-box '+(won?'result-win':'result-lose');
+  el.textContent=msg;
+}
+buildGrid();
+</script>
+</body></html>
