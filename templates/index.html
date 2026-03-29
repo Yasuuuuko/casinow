@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-left">
+    <div class="logo">🎰 CasiNow</div>
+  </div>
+  <div class="nav-right">
+    <div id="balance-display" class="balance-box" style="display:none">
+      <span class="coin-icon">🪙</span>
+      <span id="balance-amount">0</span>
+    </div>
+    <div id="user-info" style="display:none" class="user-info">
+      <img id="user-avatar" class="avatar" src="" alt="">
+      <span id="user-name"></span>
+      <a href="/logout" class="btn-logout">Déconnexion</a>
+    </div>
+    <a id="login-btn" href="/login" class="btn-discord" style="display:none">
+      <svg width="20" height="20" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.9a.2.2 0 0 0-.2.1 40.8 40.8 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0 37.4 37.4 0 0 0-1.8-3.7.2.2 0 0 0-.2-.1A58.4 58.4 0 0 0 10.9 4.9a.2.2 0 0 0-.1.1C1.6 18.1-.9 31 .3 43.7a.2.2 0 0 0 .1.1 58.8 58.8 0 0 0 17.7 9 .2.2 0 0 0 .2-.1 42 42 0 0 0 3.6-5.9.2.2 0 0 0-.1-.3 38.7 38.7 0 0 1-5.5-2.6.2.2 0 0 1 0-.3l1.1-.9a.2.2 0 0 1 .2 0c11.5 5.3 24 5.3 35.4 0a.2.2 0 0 1 .2 0l1.1.9a.2.2 0 0 1 0 .3 36.1 36.1 0 0 1-5.5 2.6.2.2 0 0 0-.1.3 47.1 47.1 0 0 0 3.6 5.9.2.2 0 0 0 .2.1 58.6 58.6 0 0 0 17.8-9 .2.2 0 0 0 .1-.1c1.5-15.3-2.5-28.6-10.6-40.4a.2.2 0 0 0-.1-.1ZM23.7 36c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2Z"/></svg>
+      Connexion Discord
+    </a>
+  </div>
+</nav>
+
+<div id="landing" class="landing" style="display:none">
+  <div class="landing-content">
+    <h1>Bienvenue sur <span class="accent">CasiNow</span></h1>
+    <p>Le casino Discord le plus stylé. Connecte-toi avec Discord pour jouer.</p>
+    <a href="/login" class="btn-discord big">
+      <svg width="24" height="24" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5.9a.2.2 0 0 0-.2.1 40.8 40.8 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0 37.4 37.4 0 0 0-1.8-3.7.2.2 0 0 0-.2-.1A58.4 58.4 0 0 0 10.9 4.9a.2.2 0 0 0-.1.1C1.6 18.1-.9 31 .3 43.7a.2.2 0 0 0 .1.1 58.8 58.8 0 0 0 17.7 9 .2.2 0 0 0 .2-.1 42 42 0 0 0 3.6-5.9.2.2 0 0 0-.1-.3 38.7 38.7 0 0 1-5.5-2.6.2.2 0 0 1 0-.3l1.1-.9a.2.2 0 0 1 .2 0c11.5 5.3 24 5.3 35.4 0a.2.2 0 0 1 .2 0l1.1.9a.2.2 0 0 1 0 .3 36.1 36.1 0 0 1-5.5 2.6.2.2 0 0 0-.1.3 47.1 47.1 0 0 0 3.6 5.9.2.2 0 0 0 .2.1 58.6 58.6 0 0 0 17.8-9 .2.2 0 0 0 .1-.1c1.5-15.3-2.5-28.6-10.6-40.4a.2.2 0 0 0-.1-.1ZM23.7 36c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2Zm23.6 0c-3.5 0-6.4-3.2-6.4-7.2s2.8-7.2 6.4-7.2c3.6 0 6.5 3.3 6.4 7.2 0 4-2.8 7.2-6.4 7.2Z"/></svg>
+      Se connecter avec Discord
+    </a>
+  </div>
+</div>
+
+<main id="main-content" class="main-content" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="content-area">
+    <div class="home-grid">
+      <a href="/game/plinko" class="game-card">
+        <div class="game-icon">🎯</div>
+        <div class="game-name">Plinko</div>
+        <div class="game-desc">Laisse tomber la balle et multiplie ta mise !</div>
+        <div class="game-badge">HOT</div>
+      </a>
+      <a href="/game/mines" class="game-card">
+        <div class="game-icon">💣</div>
+        <div class="game-name">Mines</div>
+        <div class="game-desc">Évite les bombes et encaisse tes gains</div>
+        <div class="game-badge">POPULAIRE</div>
+      </a>
+      <a href="/game/slots" class="game-card">
+        <div class="game-icon">🎰</div>
+        <div class="game-name">Slots</div>
+        <div class="game-desc">Machine à sous jusqu'à 50x ta mise</div>
+      </a>
+      <a href="/game/coinflip" class="game-card">
+        <div class="game-icon">🪙</div>
+        <div class="game-name">Coinflip</div>
+        <div class="game-desc">Pile ou face, double ou rien</div>
+      </a>
+      <a href="/game/blackjack" class="game-card">
+        <div class="game-icon">🃏</div>
+        <div class="game-name">Blackjack</div>
+        <div class="game-desc">Bats le croupier à 21</div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<script>
+fetch('/api/me').then(r=>{
+  if(r.status===401){
+    document.getElementById('login-btn').style.display='flex';
+    document.getElementById('landing').style.display='flex';
+    return null;
+  }
+  return r.json();
+}).then(data=>{
+  if(!data) return;
+  document.getElementById('user-info').style.display='flex';
+  document.getElementById('balance-display').style.display='flex';
+  document.getElementById('main-content').style.display='flex';
+  document.getElementById('user-avatar').src=data.avatar;
+  document.getElementById('user-name').textContent=data.username;
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+});
+</script>
+</body>
+</html>
