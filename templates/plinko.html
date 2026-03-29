@@ -9,6 +9,154 @@
 </head>
 <body>
 <nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">&#127922; CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">&#129689;</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Deco</a></div>
+  </div>
+</nav>
+<div class="game-page">
+  <div class="sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item active">&#127919; Plinko</a>
+    <a href="/game/mines" class="sidebar-item">&#128163; Mines</a>
+    <a href="/game/slots" class="sidebar-item">&#127922; Slots</a>
+    <a href="/game/coinflip" class="sidebar-item">&#129689; Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item">&#127183; Blackjack</a>
+  </div>
+  <div class="game-content">
+    <h1 class="game-title">&#127919; Plinko</h1>
+    <div class="bet-panel">
+      <div class="bet-row">
+        <label>Mise</label>
+        <input type="number" id="bet" class="bet-input" value="100" min="1">
+        <div class="quick-bets">
+          <button class="quick-bet" onclick="setBet(100)">100</button>
+          <button class="quick-bet" onclick="setBet(500)">500</button>
+          <button class="quick-bet" onclick="setBet(1000)">1K</button>
+          <button class="quick-bet" onclick="setBet(5000)">5K</button>
+        </div>
+        <label>Lignes</label>
+        <select id="rows" class="bet-input" style="width:80px">
+          <option value="8">8</option>
+          <option value="12">12</option>
+          <option value="16" selected>16</option>
+        </select>
+        <button class="btn-primary" onclick="drop()">Lancer !</button>
+      </div>
+    </div>
+    <div class="plinko-board"><canvas id="cv" width="600" height="520"></canvas></div>
+    <div id="result" class="result-box" style="display:none"></div>
+  </div>
+</div>
+<script>
+var bal=0;
+fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{
+  if(!d){location.href='/';return;}
+  bal=d.balance;
+  document.getElementById('balance-amount').textContent=d.balance;
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+
+function setBet(v){document.getElementById('bet').value=v;}
+
+var cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+var MULTI={8:[5.6,2.1,1.1,1.0,0.5,1.0,1.1,2.1,5.6],12:[10,3,1.6,1.4,1.1,1.0,0.5,1.0,1.1,1.4,1.6,3,10],16:[16,9,2,1.4,1.4,1.2,1.1,1.0,0.5,1.0,1.1,1.2,1.4,1.4,2,9,16]};
+
+function drawBoard(rows,path,ballPos){
+  ctx.clearRect(0,0,600,520);
+  var W=600,H=500,pegR=5,ballR=10;
+  var colW=W/(rows+2);
+  var rowH=(H-60)/(rows+1);
+  // Draw pegs
+  ctx.fillStyle='#7c3aed';
+  for(var r=0;r<rows;r++){
+    for(var c=0;c<=r;c++){
+      var x=W/2-(r/2-c)*colW;
+      var y=40+(r+1)*rowH;
+      ctx.beginPath();ctx.arc(x,y,pegR,0,Math.PI*2);ctx.fill();
+    }
+  }
+  // Draw multiplier slots
+  var mults=MULTI[rows];
+  for(var i=0;i<mults.length;i++){
+    var sx=W/2-(mults.length/2-i)*colW;
+    var sy=H-20;
+    var col=mults[i]>=2?'#16a34a':mults[i]>=1?'#ca8a04':'#dc2626';
+    ctx.fillStyle=col;
+    ctx.beginPath();ctx.roundRect(sx-colW/2+2,sy-16,colW-4,22,4);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Inter';ctx.textAlign='center';
+    ctx.fillText('x'+mults[i],sx,sy);
+  }
+  // Draw ball
+  if(ballPos){
+    ctx.fillStyle='#fbbf24';ctx.strokeStyle='#f59e0b';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(ballPos.x,ballPos.y,ballR,0,Math.PI*2);ctx.fill();ctx.stroke();
+  }
+}
+
+function drop(){
+  var bet=parseInt(document.getElementById('bet').value);
+  var rows=parseInt(document.getElementById('rows').value);
+  if(bet<=0||bet>bal){alert('Mise invalide');return;}
+  document.querySelector('.btn-primary').disabled=true;
+  fetch('/api/plinko',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,rows})})
+  .then(r=>r.json()).then(d=>{
+    if(d.error){alert(d.error);document.querySelector('.btn-primary').disabled=false;return;}
+    animateBall(d.path,d.slot,d.multiplier,d.winnings,d.profit,d.balance,rows);
+  });
+}
+
+function animateBall(path,slot,mult,win,profit,newBal,rows){
+  var W=600,H=500;
+  var colW=W/(rows+2);
+  var rowH=(H-60)/(rows+1);
+  var pos={x:W/2,y:20};
+  var step=0;
+  drawBoard(rows,null,pos);
+  function animate(){
+    if(step>=path.length){
+      // Final position
+      var mults=MULTI[rows];
+      var finalX=W/2-(mults.length/2-slot)*colW;
+      pos={x:finalX,y:H-30};
+      drawBoard(rows,path,pos);
+      bal=newBal;
+      document.getElementById('balance-amount').textContent=newBal;
+      var res=document.getElementById('result');
+      res.style.display='block';
+      if(profit>0){res.innerHTML='<div class="result-win">+'+profit+' &#129689; (x'+mult+')</div>';}
+      else{res.innerHTML='<div class="result-lose">'+profit+' &#129689; (x'+mult+')</div>';}
+      document.querySelector('.btn-primary').disabled=false;
+      return;
+    }
+    var r=step;
+    var c=0;
+    for(var i=0;i<step;i++){c+=path[i];}
+    var px=W/2-(r/2-c)*colW;
+    var py=40+(r+1)*rowH;
+    pos={x:px,y:py};
+    drawBoard(rows,path,pos);
+    step++;
+    setTimeout(animate,120);
+  }
+  animate();
+}
+drawBoard(16,null,null);
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plinko - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
   <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
   <div class="nav-right">
     <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
