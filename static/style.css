@@ -1,4 +1,82 @@
 *{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;background:#161b22;border-bottom:1px solid #30363d;position:sticky;top:0;z-index:100}
+.logo{font-size:18px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:-0.5px}
+.nav-right{display:flex;align-items:center;gap:12px}
+.balance-box{display:flex;align-items:center;gap:6px;background:#1e2630;border:1px solid #30363d;border-radius:8px;padding:6px 12px;font-weight:600;font-size:14px}
+.coin-icon{font-size:16px}
+.user-info{display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;border:2px solid #7c3aed}
+#user-name{font-size:14px;font-weight:600}
+.btn-logout{font-size:13px;color:#94a3b8;text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid #30363d}
+.btn-logout:hover{color:#fff;border-color:#7c3aed}
+.btn-discord{display:inline-flex;align-items:center;gap:8px;background:#5865f2;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
+.btn-discord:hover{background:#4752c4}
+.btn-discord.big{padding:14px 32px;font-size:16px;border-radius:10px}
+.landing{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);flex-direction:column}
+.landing-content{text-align:center;max-width:500px;padding:40px 20px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.landing-content h1{font-size:48px;font-weight:800;line-height:1.1}
+.landing-content p{color:#94a3b8;font-size:16px}
+.accent{color:#7c3aed}
+.main-content{display:flex;min-height:calc(100vh - 56px)}
+.sidebar{width:220px;background:#161b22;border-right:1px solid #30363d;padding:16px 0;flex-shrink:0}
+.sidebar-label{font-size:11px;font-weight:700;color:#64748b;letter-spacing:1.5px;padding:8px 20px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 20px;color:#94a3b8;text-decoration:none;font-size:14px;font-weight:500;transition:all 0.15s}
+.sidebar-item:hover,.sidebar-item.active{background:#1e2630;color:#fff}
+.content-area{flex:1;padding:32px}
+.section-title{font-size:22px;font-weight:700;margin-bottom:24px}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.game-card{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px 16px;background:#161b22;border:1px solid #30363d;border-radius:12px;text-decoration:none;color:#e2e8f0;transition:all 0.2s;text-align:center}
+.game-card:hover{border-color:#7c3aed;background:#1a1f2e;transform:translateY(-2px)}
+.game-icon{font-size:40px}
+.game-name{font-size:16px;font-weight:700}
+.game-desc{font-size:13px;color:#64748b}
+.game-page{display:flex;min-height:calc(100vh - 56px)}
+.game-content{flex:1;padding:32px;max-width:900px;margin:0 auto}
+.game-title{font-size:28px;font-weight:800;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.bet-panel{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-bottom:20px}
+.bet-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.bet-row label{font-size:14px;color:#94a3b8;min-width:60px}
+.bet-input{background:#0f1117;border:1px solid #30363d;color:#fff;border-radius:8px;padding:8px 12px;font-size:15px;font-weight:600;width:130px}
+.quick-bets{display:flex;gap:6px}
+.quick-bet{background:#1e2630;border:1px solid #30363d;color:#94a3b8;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer}
+.quick-bet:hover{border-color:#7c3aed;color:#fff}
+.btn-primary{background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;cursor:pointer}
+.btn-primary:hover{background:#6d28d9}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-danger{background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;cursor:pointer}
+.btn-danger:hover{background:#b91c1c}
+.btn-success{background:#16a34a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:15px;font-weight:600;cursor:pointer}
+.btn-success:hover{background:#15803d}
+.result-box{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;margin-top:16px;text-align:center}
+.result-win{color:#4ade80;font-size:20px;font-weight:700}
+.result-lose{color:#f87171;font-size:20px;font-weight:700}
+.result-push{color:#facc15;font-size:20px;font-weight:700}
+.plinko-board{background:#161b22;border:1px solid #30363d;border-radius:12px;margin:20px 0;display:flex;justify-content:center}
+canvas{display:block}
+.mines-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:20px 0;max-width:360px}
+.mine-cell{aspect-ratio:1;background:#1e2630;border:1px solid #30363d;border-radius:8px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.mine-cell:hover:not(.revealed){background:#2d3748;border-color:#7c3aed}
+.mine-cell.safe{background:#16a34a33;border-color:#16a34a;cursor:default}
+.mine-cell.bomb{background:#dc262633;border-color:#dc2626;cursor:default}
+.slots-display{background:#0f1117;border:1px solid #30363d;border-radius:12px;padding:20px;margin:20px 0;display:flex;justify-content:center;gap:8px}
+.reel{display:flex;flex-direction:column;gap:4px;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:8px;width:70px}
+.reel-cell{font-size:28px;text-align:center;line-height:1.5}
+.reel-cell.middle{background:#7c3aed22;border-radius:4px}
+.coinflip-area{margin:20px 0;text-align:center}
+.coin{font-size:80px;display:block;margin:20px 0;transition:all 0.5s}
+.bj-area{display:flex;flex-direction:column;gap:20px}
+.bj-hand{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px}
+.bj-hand h3{font-size:14px;color:#94a3b8;margin-bottom:10px}
+.cards{display:flex;gap:8px;flex-wrap:wrap}
+.card{background:#fff;color:#000;width:52px;height:72px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.card.red{color:#dc2626}
+.card.hidden{background:#7c3aed;color:#fff}
+.msg{padding:12px;border-radius:8px;font-weight:600;text-align:center;margin-top:12px}
+.msg.win{background:#16a34a22;border:1px solid #16a34a;color:#4ade80}
+.msg.lose{background:#dc262622;border:1px solid #dc2626;color:#f87171}
+.msg.info{background:#7c3aed22;border:1px solid #7c3aed;color:#a78bfa}
+@media(max-width:768px){.sidebar{display:none}.games-grid{grid-template-columns:repeat(2,1fr)}}*{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',sans-serif;background:#0f1923;color:#e2e8f0;min-height:100vh}
 
 /* NAVBAR */
