@@ -1,4 +1,141 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mines - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">&#127922; CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">&#129689;</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Deco</a></div>
+  </div>
+</nav>
+<div class="game-page">
+  <div class="sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item">&#127919; Plinko</a>
+    <a href="/game/mines" class="sidebar-item active">&#128163; Mines</a>
+    <a href="/game/slots" class="sidebar-item">&#127922; Slots</a>
+    <a href="/game/coinflip" class="sidebar-item">&#129689; Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item">&#127183; Blackjack</a>
+  </div>
+  <div class="game-content">
+    <h1 class="game-title">&#128163; Mines</h1>
+    <div class="bet-panel">
+      <div class="bet-row">
+        <label>Mise</label>
+        <input type="number" id="bet" class="bet-input" value="100" min="1">
+        <div class="quick-bets">
+          <button class="quick-bet" onclick="document.getElementById('bet').value=100">100</button>
+          <button class="quick-bet" onclick="document.getElementById('bet').value=500">500</button>
+          <button class="quick-bet" onclick="document.getElementById('bet').value=1000">1K</button>
+        </div>
+        <label>Mines</label>
+        <input type="number" id="minesCount" class="bet-input" value="5" min="1" max="24" style="width:70px">
+        <button class="btn-primary" id="startBtn" onclick="startGame()">Jouer</button>
+        <button class="btn-success" id="cashoutBtn" onclick="cashout()" style="display:none">Cashout</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px">
+      <div class="mines-grid" id="grid"></div>
+      <div id="info" style="min-width:160px">
+        <div class="result-box" style="display:none" id="multBox">
+          <div style="color:#94a3b8;font-size:13px">Multiplicateur</div>
+          <div id="multVal" style="font-size:28px;font-weight:800;color:#a78bfa">x1.00</div>
+          <div style="color:#94a3b8;font-size:13px;margin-top:4px">Gain potentiel</div>
+          <div id="potVal" style="font-size:20px;font-weight:700;color:#4ade80">0</div>
+        </div>
+      </div>
+    </div>
+    <div id="result" class="result-box" style="display:none;margin-top:12px"></div>
+  </div>
+</div>
+<script>
+var bal=0,active=false;
+fetch('/api/me').then(r=>r.ok?r.json():null).then(d=>{
+  if(!d){location.href='/';return;}
+  bal=d.balance;
+  document.getElementById('balance-amount').textContent=d.balance;
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+  buildGrid();
+});
+
+function buildGrid(){
+  var g=document.getElementById('grid');
+  g.innerHTML='';
+  for(var i=0;i<25;i++){
+    var cell=document.createElement('button');
+    cell.className='mine-cell';
+    cell.dataset.i=i;
+    cell.innerHTML='&#10067;';
+    cell.onclick=function(){reveal(parseInt(this.dataset.i));};
+    g.appendChild(cell);
+  }
+}
+
+function startGame(){
+  var bet=parseInt(document.getElementById('bet').value);
+  var mines=parseInt(document.getElementById('minesCount').value);
+  if(bet<=0||bet>bal){alert('Mise invalide');return;}
+  document.getElementById('startBtn').disabled=true;
+  document.getElementById('result').style.display='none';
+  buildGrid();
+  fetch('/api/mines/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,mines})})
+  .then(r=>r.json()).then(d=>{
+    if(d.error){alert(d.error);document.getElementById('startBtn').disabled=false;return;}
+    active=true;bal=d.balance;
+    document.getElementById('balance-amount').textContent=d.balance;
+    document.getElementById('cashoutBtn').style.display='inline-flex';
+    document.getElementById('multBox').style.display='block';
+  });
+}
+
+function reveal(pos){
+  if(!active)return;
+  fetch('/api/mines/reveal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pos})})
+  .then(r=>r.json()).then(d=>{
+    if(d.error){alert(d.error);return;}
+    var cell=document.querySelector('.mine-cell[data-i="'+pos+'"]');
+    if(d.hit){
+      cell.className='mine-cell bomb';cell.innerHTML='&#128163;';
+      d.mines.forEach(function(m){
+        var mc=document.querySelector('.mine-cell[data-i="'+m+'"]');
+        if(mc){mc.className='mine-cell bomb';mc.innerHTML='&#128163;';}
+      });
+      active=false;
+      document.getElementById('cashoutBtn').style.display='none';
+      document.getElementById('startBtn').disabled=false;
+      document.getElementById('result').style.display='block';
+      document.getElementById('result').innerHTML='<div class="result-lose">&#128165; Boom ! Tu as perdu ta mise.</div>';
+      bal=d.balance;document.getElementById('balance-amount').textContent=d.balance;
+    } else {
+      cell.className='mine-cell safe';cell.innerHTML='&#10004;';
+      document.getElementById('multVal').textContent='x'+d.multiplier;
+      document.getElementById('potVal').textContent=d.potential+' &#129689;';
+    }
+  });
+}
+
+function cashout(){
+  if(!active)return;
+  fetch('/api/mines/cashout',{method:'POST'}).then(r=>r.json()).then(d=>{
+    active=false;bal=d.balance;
+    document.getElementById('balance-amount').textContent=d.balance;
+    document.getElementById('cashoutBtn').style.display='none';
+    document.getElementById('startBtn').disabled=false;
+    document.getElementById('result').style.display='block';
+    document.getElementById('result').innerHTML='<div class="result-win">+' + (d.winnings - parseInt(document.getElementById('bet').value)) + ' &#129689; (x'+d.multiplier+')</div>';
+  });
+}
+</script>
+</body>
+</html><!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mines - CasiNow</title>
 <link rel="stylesheet" href="/static/style.css">
