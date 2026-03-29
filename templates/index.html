@@ -3,6 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CasiNow — Casino Discord</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-left">
+    <a href="/" class="logo">🎰 CasiNow</a>
+  </div>
+  <div class="nav-right">
+    <div id="balance-display" class="balance-box" style="display:none">
+      <span class="coin-icon">🪙</span>
+      <span id="balance-amount">0</span>
+    </div>
+    <div id="user-info" style="display:none" class="user-info">
+      <img id="user-avatar" class="avatar" src="" alt="">
+      <span id="user-name"></span>
+      <a href="/logout" class="btn-logout">Déconnexion</a>
+    </div>
+    <a id="login-btn" href="/login" class="btn-discord" style="display:none">
+      <svg width="20" height="20" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5 0a2.2 2.2 0 0 0-.2 1 40.8 40.8 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0A37.4 37.4 0 0 0 25.4 1a2.2 2.2 0 0 0-.2-1A58.4 58.4 0 0 0 10.9 4.9C1.6 18.9-1 32.5.3 46C6 50.1 11.5 52.6 16.9 54.3a2.2 2.2 0 0 0 2.4-.8 42 42 0 0 0 3.6-5.9 2.1 2.1 0 0 0-1.2-3A38.7 38.7 0 0 1 16 42.7a2.2 2.2 0 0 1-.2-3.1c.4-.3.9-.4 1.4-.2 9.3 4.2 19.3 4.2 28.4 0a2.2 2.2 0 0 1 1.4.2 2.2 2.2 0 0 1-.2 3.1 38.7 38.7 0 0 1-5.7 1.9 2.1 2.1 0 0 0-1.2 3 42 42 0 0 0 3.6 5.9 2.2 2.2 0 0 0 2.4.8c5.4-1.7 10.9-4.2 16.6-8.3C63.9 32.2 61.3 18.7 60.1 4.9zM23.7 37.8c-3.2 0-5.9-3-5.9-6.6s2.6-6.6 5.9-6.6c3.3 0 5.9 3 5.9 6.6s-2.6 6.6-5.9 6.6zm22 0c-3.3 0-5.9-3-5.9-6.6s2.6-6.6 5.9-6.6c3.3 0 5.9 3 5.9 6.6s-2.6 6.6-5.9 6.6z"/></svg>
+      Connexion Discord
+    </a>
+  </div>
+</nav>
+
+<div id="landing" class="landing" style="display:none">
+  <div class="landing-content">
+    <div class="landing-icon">🎰</div>
+    <h1>Bienvenue sur <span class="accent">CasiNow</span></h1>
+    <p class="landing-sub">Le casino Discord le plus stylé.<br>Connecte-toi avec Discord pour commencer à jouer.</p>
+    <a href="/login" class="btn-discord big">
+      <svg width="22" height="22" viewBox="0 0 71 55" fill="white"><path d="M60.1 4.9A58.5 58.5 0 0 0 45.5 0a2.2 2.2 0 0 0-.2 1 40.8 40.8 0 0 0-1.8 3.7 54 54 0 0 0-16.2 0A37.4 37.4 0 0 0 25.4 1a2.2 2.2 0 0 0-.2-1A58.4 58.4 0 0 0 10.9 4.9C1.6 18.9-1 32.5.3 46C6 50.1 11.5 52.6 16.9 54.3a2.2 2.2 0 0 0 2.4-.8 42 42 0 0 0 3.6-5.9 2.1 2.1 0 0 0-1.2-3A38.7 38.7 0 0 1 16 42.7a2.2 2.2 0 0 1-.2-3.1c.4-.3.9-.4 1.4-.2 9.3 4.2 19.3 4.2 28.4 0a2.2 2.2 0 0 1 1.4.2 2.2 2.2 0 0 1-.2 3.1 38.7 38.7 0 0 1-5.7 1.9 2.1 2.1 0 0 0-1.2 3 42 42 0 0 0 3.6 5.9 2.2 2.2 0 0 0 2.4.8c5.4-1.7 10.9-4.2 16.6-8.3C63.9 32.2 61.3 18.7 60.1 4.9zM23.7 37.8c-3.2 0-5.9-3-5.9-6.6s2.6-6.6 5.9-6.6c3.3 0 5.9 3 5.9 6.6s-2.6 6.6-5.9 6.6zm22 0c-3.3 0-5.9-3-5.9-6.6s2.6-6.6 5.9-6.6c3.3 0 5.9 3 5.9 6.6s-2.6 6.6-5.9 6.6z"/></svg>
+      Se connecter avec Discord
+    </a>
+    <div class="games-preview">
+      <div class="preview-card"><div class="preview-icon">🎯</div><div class="preview-name">Plinko</div></div>
+      <div class="preview-card"><div class="preview-icon">💣</div><div class="preview-name">Mines</div></div>
+      <div class="preview-card"><div class="preview-icon">🎰</div><div class="preview-name">Slots</div></div>
+      <div class="preview-card"><div class="preview-icon">🪙</div><div class="preview-name">Coinflip</div></div>
+      <div class="preview-card"><div class="preview-icon">🃏</div><div class="preview-name">Blackjack</div></div>
+    </div>
+  </div>
+</div>
+
+<main id="main-content" class="main-content" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="content-area">
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-item"><span class="stat-label">Solde</span><span class="stat-value" id="stat-balance">—</span></div>
+      <div class="stat-item"><span class="stat-label">Banque</span><span class="stat-value" id="stat-bank">—</span></div>
+      <div class="stat-item"><span class="stat-label">Gains totaux</span><span class="stat-value green" id="stat-won">—</span></div>
+      <div class="stat-item"><span class="stat-label">Pertes totales</span><span class="stat-value red" id="stat-lost">—</span></div>
+    </div>
+    <h2 class="section-title">Choisissez un jeu</h2>
+    <div class="games-grid">
+      <a href="/game/plinko" class="game-card">
+        <div class="game-card-glow"></div>
+        <div class="game-icon">🎯</div>
+        <div class="game-info">
+          <div class="game-name">Plinko</div>
+          <div class="game-desc">Lâche la balle et gagne gros</div>
+          <div class="game-mult">x0.5 – x16</div>
+        </div>
+      </a>
+      <a href="/game/mines" class="game-card">
+        <div class="game-card-glow"></div>
+        <div class="game-icon">💣</div>
+        <div class="game-info">
+          <div class="game-name">Mines</div>
+          <div class="game-desc">Évite les mines, cashout en temps</div>
+          <div class="game-mult">x1 – x∞</div>
+        </div>
+      </a>
+      <a href="/game/slots" class="game-card">
+        <div class="game-card-glow"></div>
+        <div class="game-icon">🎰</div>
+        <div class="game-info">
+          <div class="game-name">Slots</div>
+          <div class="game-desc">Aligne les symboles pour gagner</div>
+          <div class="game-mult">x2 – x50</div>
+        </div>
+      </a>
+      <a href="/game/coinflip" class="game-card">
+        <div class="game-card-glow"></div>
+        <div class="game-icon">🪙</div>
+        <div class="game-info">
+          <div class="game-name">Coinflip</div>
+          <div class="game-desc">Face ou pile, 50/50</div>
+          <div class="game-mult">x2</div>
+        </div>
+      </a>
+      <a href="/game/blackjack" class="game-card">
+        <div class="game-card-glow"></div>
+        <div class="game-icon">🃏</div>
+        <div class="game-info">
+          <div class="game-name">Blackjack</div>
+          <div class="game-desc">21 contre le croupier</div>
+          <div class="game-mult">x2.5 BJ</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<script>
+(async () => {
+  const res = await fetch('/api/me');
+  if (res.ok) {
+    const d = await res.json();
+    document.getElementById('balance-display').style.display='flex';
+    document.getElementById('balance-amount').textContent = d.balance.toLocaleString();
+    document.getElementById('user-info').style.display='flex';
+    document.getElementById('user-avatar').src = d.avatar;
+    document.getElementById('user-name').textContent = d.username;
+    document.getElementById('main-content').style.display='flex';
+    document.getElementById('stat-balance').textContent = d.balance.toLocaleString() + ' 🪙';
+    document.getElementById('stat-bank').textContent = (d.bank||0).toLocaleString() + ' 🪙';
+    document.getElementById('stat-won').textContent = (d.total_won||0).toLocaleString() + ' 🪙';
+    document.getElementById('stat-lost').textContent = (d.total_lost||0).toLocaleString() + ' 🪙';
+    // Highlight active sidebar item
+    document.querySelectorAll('.sidebar-item').forEach(a => {
+      if(a.href === location.href) a.classList.add('active');
+    });
+  } else {
+    document.getElementById('landing').style.display='flex';
+    document.getElementById('login-btn').style.display='flex';
+  }
+})();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CasiNow</title>
 <link rel="stylesheet" href="/static/style.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
