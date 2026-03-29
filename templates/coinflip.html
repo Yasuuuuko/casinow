@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coinflip - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head><body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Déco</a></div>
+  </div>
+</nav>
+<div class="game-layout">
+  <div class="nav-sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item active"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="game-area">
+    <div style="display:flex;gap:20px;width:100%;max-width:900px">
+      <div class="game-sidebar" style="width:260px">
+        <div class="bet-section">
+          <div class="bet-label">MISE</div>
+          <div class="bet-input-wrap"><span class="bet-coin">🪙</span><input type="number" id="bet" class="bet-input" value="100" min="1"></div>
+          <div class="bet-btns">
+            <button class="bet-btn" onclick="adjBet(.5)">½</button>
+            <button class="bet-btn" onclick="adjBet(2)">2x</button>
+            <button class="bet-btn" onclick="setBet(100)">100</button>
+            <button class="bet-btn" onclick="setBet(500)">500</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="flip-btn" onclick="flip()">🪙 Lancer</button>
+        <div id="result" class="result-box"></div>
+      </div>
+      <div style="flex:1;background:#1a2634;border-radius:16px;border:1px solid #2d3f50;overflow:hidden">
+        <div class="panel-header">🪙 Coinflip — x2 si tu gagnes</div>
+        <div class="coin-choice">
+          <div class="coin-opt selected" id="opt-heads" onclick="select('heads')">🌝<div style="font-size:13px;margin-top:4px">Pile</div></div>
+          <div class="coin-opt" id="opt-tails" onclick="select('tails')">🌚<div style="font-size:13px;margin-top:4px">Face</div></div>
+        </div>
+        <div class="coin-display"><div class="coin" id="coin">🌝</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let choice='heads', flipping=false;
+fetch('/api/me').then(r=>r.status===401?location.href='/':r.json()).then(d=>{
+  if(!d)return;
+  document.getElementById('balance-amount').textContent=d.balance.toLocaleString();
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+function adjBet(m){const i=document.getElementById('bet');i.value=Math.max(1,Math.floor(i.value*m));}
+function setBet(v){document.getElementById('bet').value=v;}
+function select(c){
+  choice=c;
+  document.getElementById('opt-heads').className='coin-opt'+(c==='heads'?' selected':'');
+  document.getElementById('opt-tails').className='coin-opt'+(c==='tails'?' selected':'');
+}
+async function flip(){
+  if(flipping)return;
+  const bet=parseInt(document.getElementById('bet').value)||0;
+  flipping=true;
+  document.getElementById('flip-btn').disabled=true;
+  document.getElementById('result').style.display='none';
+  const coin=document.getElementById('coin');
+  coin.classList.add('spinning');
+  const res=await fetch('/api/coinflip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet,choice})});
+  const data=await res.json();
+  setTimeout(()=>{
+    coin.classList.remove('spinning');
+    coin.textContent=data.result==='heads'?'🌝':'🌚';
+    if(data.error){showResult(false,data.error);}
+    else{
+      document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+      showResult(data.won,data.won?'+'+bet+' 🪙 — Gagné !':'Perdu...');
+    }
+    flipping=false; document.getElementById('flip-btn').disabled=false;
+  },1100);
+}
+function showResult(won,msg){
+  const el=document.getElementById('result');el.style.display='block';
+  el.className='result-box '+(won?'result-win':'result-lose');el.textContent=msg;
+}
+</script>
+</body></html>
