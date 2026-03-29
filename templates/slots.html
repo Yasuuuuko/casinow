@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slots - CasiNow</title>
+<link rel="stylesheet" href="/static/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head><body>
+<nav class="navbar">
+  <div class="nav-left"><a href="/" class="logo">🎰 CasiNow</a></div>
+  <div class="nav-right">
+    <div class="balance-box"><span class="coin-icon">🪙</span><span id="balance-amount">0</span></div>
+    <div class="user-info"><img id="user-avatar" class="avatar" src="" alt=""><span id="user-name"></span><a href="/logout" class="btn-logout">Déco</a></div>
+  </div>
+</nav>
+<div class="game-layout">
+  <div class="nav-sidebar">
+    <div class="sidebar-label">JEUX</div>
+    <a href="/game/plinko" class="sidebar-item"><span>🎯</span> Plinko</a>
+    <a href="/game/mines" class="sidebar-item"><span>💣</span> Mines</a>
+    <a href="/game/slots" class="sidebar-item active"><span>🎰</span> Slots</a>
+    <a href="/game/coinflip" class="sidebar-item"><span>🪙</span> Coinflip</a>
+    <a href="/game/blackjack" class="sidebar-item"><span>🃏</span> Blackjack</a>
+  </div>
+  <div class="game-area">
+    <div style="display:flex;gap:20px;width:100%;max-width:900px">
+      <div class="game-sidebar" style="width:260px">
+        <div class="bet-section">
+          <div class="bet-label">MISE</div>
+          <div class="bet-input-wrap"><span class="bet-coin">🪙</span><input type="number" id="bet" class="bet-input" value="100" min="1"></div>
+          <div class="bet-btns">
+            <button class="bet-btn" onclick="adjBet(.5)">½</button>
+            <button class="bet-btn" onclick="adjBet(2)">2x</button>
+            <button class="bet-btn" onclick="setBet(100)">100</button>
+            <button class="bet-btn" onclick="setBet(500)">500</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="spin-btn" onclick="spin()">🎰 Tourner</button>
+        <div id="result" class="result-box"></div>
+        <div style="margin-top:16px;padding:12px;background:#0f1923;border-radius:8px;font-size:12px;color:#4a6278">
+          <div style="font-weight:700;color:#8899aa;margin-bottom:8px">PAIEMENTS (3 identiques)</div>
+          <div>7️⃣ x50 &nbsp; 💎 x20 &nbsp; ⭐ x10</div>
+          <div>🔔 x5 &nbsp; 🍋 x3 &nbsp; 🍒 x2</div>
+          <div style="margin-top:6px">2 identiques (milieu) = x1.5</div>
+        </div>
+      </div>
+      <div style="flex:1;background:#1a2634;border-radius:16px;border:1px solid #2d3f50;overflow:hidden">
+        <div class="panel-header">🎰 Machine à Sous</div>
+        <div class="slots-display" id="slots-display">
+          <div class="reel" id="reel0"><div class="reel-row">🍒</div><div class="reel-row middle-row">🍒</div><div class="reel-row">🍒</div></div>
+          <div class="reel" id="reel1"><div class="reel-row">🍒</div><div class="reel-row middle-row">🍒</div><div class="reel-row">🍒</div></div>
+          <div class="reel" id="reel2"><div class="reel-row">🍒</div><div class="reel-row middle-row">🍒</div><div class="reel-row">🍒</div></div>
+        </div>
+        <div class="win-line"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const SYMS=['🍒','🍋','🔔','⭐','💎','7️⃣'];
+let spinning=false;
+fetch('/api/me').then(r=>r.status===401?location.href='/':r.json()).then(d=>{
+  if(!d)return;
+  document.getElementById('balance-amount').textContent=d.balance.toLocaleString();
+  document.getElementById('user-avatar').src=d.avatar;
+  document.getElementById('user-name').textContent=d.username;
+});
+function adjBet(m){const i=document.getElementById('bet');i.value=Math.max(1,Math.floor(i.value*m));}
+function setBet(v){document.getElementById('bet').value=v;}
+
+function animateReel(reelEl, finalSyms, delay){
+  return new Promise(resolve=>{
+    let count=0; const total=15+delay*5;
+    const rows=reelEl.querySelectorAll('.reel-row');
+    const iv=setInterval(()=>{
+      rows.forEach(r=>r.textContent=SYMS[Math.floor(Math.random()*SYMS.length)]);
+      count++;
+      if(count>=total){
+        clearInterval(iv);
+        rows[0].textContent=finalSyms[0];
+        rows[1].textContent=finalSyms[1];
+        rows[2].textContent=finalSyms[2];
+        resolve();
+      }
+    },60);
+  });
+}
+
+async function spin(){
+  if(spinning)return;
+  const bet=parseInt(document.getElementById('bet').value)||0;
+  spinning=true;
+  document.getElementById('spin-btn').disabled=true;
+  document.getElementById('result').style.display='none';
+  const res=await fetch('/api/slots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bet})});
+  const data=await res.json();
+  if(data.error){
+    showResult(false,data.error);
+    spinning=false; document.getElementById('spin-btn').disabled=false;
+    return;
+  }
+  await Promise.all([
+    animateReel(document.getElementById('reel0'),data.reels[0],0),
+    animateReel(document.getElementById('reel1'),data.reels[1],1),
+    animateReel(document.getElementById('reel2'),data.reels[2],2),
+  ]);
+  document.getElementById('balance-amount').textContent=data.balance.toLocaleString();
+  const won=data.profit>0;
+  if(won){
+    document.querySelectorAll('.middle-row').forEach(r=>{
+      r.style.animation='none'; r.style.background='rgba(241,196,15,.2)';
+      setTimeout(()=>r.style.background='',1500);
+    });
+  }
+  showResult(won||data.winnings>0, won?'+'+data.winnings+' 🪙':data.winnings>0?'+'+data.winnings+' 🪙':'Perdu...');
+  spinning=false; document.getElementById('spin-btn').disabled=false;
+}
+function showResult(won,msg){
+  const el=document.getElementById('result');el.style.display='block';
+  el.className='result-box '+(won?'result-win':'result-lose');el.textContent=msg;
+}
+</script>
+</body></html>
